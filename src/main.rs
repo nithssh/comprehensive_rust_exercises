@@ -1,72 +1,58 @@
 // TODO: remove this when you're done with your implementation.
 #![allow(unused_variables, dead_code)]
 
-pub fn luhn(cc_number: &str) -> bool {    
-    let mut cc: Vec<u32> = cc_number
-        .chars()
-        .filter(|c| *c != ' ')
-        .map(|c| c.to_digit(10))
-        .filter(|o| o.is_some() )
-        .map(|o| o.unwrap())
-        .collect();
+// Alternatively, Iterator::zip() lets us iterate simultaneously over prefix
+// and request segments. The zip() iterator is finished as soon as one of
+// the source iterators is finished, but we need to iterate over all request
+// segments. A neat trick that makes zip() work is to use map() and chain()
+// to produce an iterator that returns Some(str) for each pattern segments,
+// and then returns None indefinitely.
 
-    if cc.len() < 2 {
-        return false;
+pub fn prefix_matches(prefix: &str, request_path: &str) -> bool {
+    let mut req_segs = request_path.split("/");
+    for pre_seg in prefix.split("/") {
+        let Some(req_seg) = req_segs.next() else {
+            return false;
+        };
+
+        if req_seg != pre_seg && pre_seg != "*" {
+            return false;
+        } 
     }
-    
-    for n in cc.iter_mut().rev().skip(1).step_by(2) {
-        *n *= 2;
-        while *n > 10 {
-            *n = *n / 10 + *n % 10
-        }
-    }
-    println!("cc after alternating doubling: {:?}", cc);
-
-    let sum: u32 = cc.iter().sum();
-    println!("sum: {}", sum);
-    if sum % 10 == 0 {
-        true
-    } else {
-        false
-    }
+    true
 }
 
 #[test]
-fn test_non_digit_cc_number() {
-    assert!(!luhn("foo"));
+fn test_matches_without_wildcard() {
+    assert!(prefix_matches("/v1/publishers", "/v1/publishers"));
+    assert!(prefix_matches("/v1/publishers", "/v1/publishers/abc-123"));
+    assert!(prefix_matches("/v1/publishers", "/v1/publishers/abc/books"));
+
+    assert!(!prefix_matches("/v1/publishers", "/v1"));
+    assert!(!prefix_matches("/v1/publishers", "/v1/publishersBooks"));
+    assert!(!prefix_matches("/v1/publishers", "/v1/parent/publishers"));
 }
 
 #[test]
-fn test_empty_cc_number() {
-    assert!(!luhn(""));
-    assert!(!luhn(" "));
-    assert!(!luhn("  "));
-    assert!(!luhn("    "));
+fn test_matches_with_wildcard() {
+    assert!(prefix_matches(
+        "/v1/publishers/*/books",
+        "/v1/publishers/foo/books"
+    ));
+    assert!(prefix_matches(
+        "/v1/publishers/*/books",
+        "/v1/publishers/bar/books"
+    ));
+    assert!(prefix_matches(
+        "/v1/publishers/*/books",
+        "/v1/publishers/foo/books/book1"
+    ));
+
+    assert!(!prefix_matches("/v1/publishers/*/books", "/v1/publishers"));
+    assert!(!prefix_matches(
+        "/v1/publishers/*/books",
+        "/v1/publishers/foo/booksByAuthor"
+    ));
 }
 
-#[test]
-fn test_single_digit_cc_number() {
-    assert!(!luhn("0"));
-}
-
-#[test]
-fn test_two_digit_cc_number() {
-    assert!(luhn(" 0 0 "));
-}
-
-#[test]
-fn test_valid_cc_number() {
-    assert!(luhn("4263 9826 4026 9299"));
-    assert!(luhn("4539 3195 0343 6467"));
-    assert!(luhn("7992 7398 713"));
-}
-
-#[test]
-fn test_invalid_cc_number() {
-    assert!(!luhn("4223 9826 4026 9299"));
-    assert!(!luhn("4539 3195 0343 6476"));
-    assert!(!luhn("8273 1232 7352 0569"));
-}
-
-#[allow(dead_code)]
 fn main() {}
