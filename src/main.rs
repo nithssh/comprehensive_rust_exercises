@@ -1,25 +1,22 @@
 // TODO: remove this when you're done with your implementation.
 #![allow(unused_variables, dead_code)]
 
-// Alternatively, Iterator::zip() lets us iterate simultaneously over prefix
-// and request segments. The zip() iterator is finished as soon as one of
-// the source iterators is finished, but we need to iterate over all request
-// segments. A neat trick that makes zip() work is to use map() and chain()
-// to produce an iterator that returns Some(str) for each pattern segments,
-// and then returns None indefinitely.
-
 pub fn prefix_matches(prefix: &str, request_path: &str) -> bool {
-    let mut req_segs = request_path.split("/");
-    for pre_seg in prefix.split("/") {
-        let Some(req_seg) = req_segs.next() else {
-            return false;
-        };
+    let req_segs = request_path.split("/")
+        .map(|x| Some(x))
+        .chain(std::iter::repeat(None));
 
-        if req_seg != pre_seg && pre_seg != "*" {
-            return false;
-        } 
-    }
-    true
+    prefix.split("/")
+        .map(|x| Some(x))
+        .zip(req_segs)
+        .all(|(x,y)| {
+            match (x,y) {
+                (Some(x), Some(y)) => x == y || x == "*",
+                (Some(_), None) => false,
+                (None, Some(_)) => true,
+                (None, None) => true
+            }
+        })
 }
 
 #[test]
