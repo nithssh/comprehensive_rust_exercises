@@ -102,12 +102,9 @@ impl Widget for Window {
 
     fn draw_into(&self, buffer: &mut dyn std::fmt::Write) {
         let width = self.width();
-        let top = "+".to_owned() + &"-".repeat(self.width()) + "+\n";
-        let mid = "|".to_owned() + &format!("{: ^width$}", self.title) + "|\n";
-        let bottom = "+".to_owned() + &"=".repeat(self.width()) + "+\n";
-        buffer.write_str(&top).unwrap();
-        buffer.write_str(&mid).unwrap();
-        buffer.write_str(&bottom).unwrap();
+        writeln!(buffer, "+{:-<width$}+", "").unwrap();
+        writeln!(buffer, "|{: ^width$}|", self.title).unwrap();
+        writeln!(buffer, "+{:=<width$}+", "").unwrap();
 
         for widget in &self.widgets {
             let mut buf = String::new();
@@ -119,7 +116,8 @@ impl Widget for Window {
             }
             
         };
-        buffer.write_str(&top).unwrap();
+        
+        writeln!(buffer, "+{:-<width$}+", "").unwrap();
     }
 }
 
